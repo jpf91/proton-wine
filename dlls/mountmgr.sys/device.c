@@ -44,7 +44,7 @@ WINE_DEFAULT_DEBUG_CHANNEL(mountmgr);
 static const WCHAR drive_types[][8] =
 {
     L"",        /* DEVICE_UNKNOWN */
-    L"",        /* DEVICE_HARDDISK */
+    L"hdusb",   /* DEVICE_HARDDISK */
     L"hd",      /* DEVICE_HARDDISK_VOL */
     L"floppy",  /* DEVICE_FLOPPY */
     L"cdrom",   /* DEVICE_CDROM */

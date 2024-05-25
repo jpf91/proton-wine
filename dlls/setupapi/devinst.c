@@ -106,6 +106,7 @@ static const WCHAR AddInterface[] = {'A','d','d','I','n','t','e','r','f','a','c'
 static const WCHAR backslashW[] = {'\\',0};
 static const WCHAR hashW[] = {'#',0};
 static const WCHAR emptyW[] = {0};
+static const WCHAR PhysicalDevice[] = {'P','h','y','s','i','c','a','l','D','e','v','i','c','e',0};
 
 #define SERVICE_CONTROL_REENUMERATE_ROOT_DEVICES 128
 
@@ -420,8 +421,11 @@ static BOOL is_linked(HKEY key)
     HKEY control_key;
     BOOL ret = FALSE;
 
+
+    TRACE("1\n");
     if (!RegOpenKeyW(key, Control, &control_key))
     {
+        TRACE("2\n");
         size = sizeof(DWORD);
         if (!RegQueryValueExW(control_key, Linked, NULL, &type, (BYTE *)&linked, &size)
                 && type == REG_DWORD && linked)
@@ -650,7 +654,7 @@ static const struct PropertyMapEntry PropertyMap[] = {
     { REG_SZ, "Mfg", Mfg },
     { REG_SZ, "FriendlyName", FriendlyName },
     { REG_SZ, "LocationInformation", LocationInformation },
-    { 0, NULL, NULL }, /* SPDRP_PHYSICAL_DEVICE_OBJECT_NAME */
+    { REG_SZ, "PhysicalDevice", PhysicalDevice }, /* SPDRP_PHYSICAL_DEVICE_OBJECT_NAME */
     { REG_DWORD, "Capabilities", Capabilities },
     { REG_DWORD, "UINumber", UINumber },
     { REG_MULTI_SZ, "UpperFilters", UpperFilters },
@@ -2435,6 +2439,8 @@ static BOOL is_device_instance_linked(HKEY interfacesKey, const WCHAR *deviceIns
     HKEY class_key, device_key, link_key;
     WCHAR class_keyname[40], device_keyname[MAX_DEVICE_ID_LEN];
     WCHAR interface_devinstance[MAX_DEVICE_ID_LEN];
+    
+    TRACE("%s\n", debugstr_w(deviceInstance));
 
     while (1)
     {
@@ -2442,10 +2448,14 @@ static BOOL is_device_instance_linked(HKEY interfacesKey, const WCHAR *deviceIns
         l = RegEnumKeyExW(interfacesKey, class_idx++, class_keyname, &len, NULL, NULL, NULL, NULL);
         if (l)
             break;
+        
+        TRACE("1: %s\n", debugstr_w(class_keyname));
 
         l = RegOpenKeyExW(interfacesKey, class_keyname, 0, KEY_READ, &class_key);
         if (l)
             continue;
+            
+        TRACE("2: %s\n", debugstr_w(class_keyname));
 
         device_idx = 0;
         while (1)
@@ -2454,7 +2464,9 @@ static BOOL is_device_instance_linked(HKEY interfacesKey, const WCHAR *deviceIns
             l = RegEnumKeyExW(class_key, device_idx++, device_keyname, &len, NULL, NULL, NULL, NULL);
             if (l)
                 break;
-
+                
+            TRACE("3: %s %s\n", debugstr_w(class_keyname), debugstr_w(device_keyname));
+                
             l = RegOpenKeyExW(class_key, device_keyname, 0, KEY_READ, &device_key);
             if (l)
                 continue;
@@ -2466,6 +2478,8 @@ static BOOL is_device_instance_linked(HKEY interfacesKey, const WCHAR *deviceIns
                 RegCloseKey(device_key);
                 continue;
             }
+            
+            TRACE("4: %s %s\n", debugstr_w(interface_devinstance), debugstr_w(deviceInstance));
 
             if (lstrcmpiW(interface_devinstance, deviceInstance))
             {
@@ -2540,6 +2554,7 @@ static void SETUPDI_EnumerateMatchingDeviceInstances(struct DeviceInfoSet *set,
                         if ((flags & DIGCF_ALLCLASSES) ||
                                 IsEqualGUID(class, &deviceClass))
                         {
+                            TRACE("Matching Class ID: %s\n", debugstr_w(deviceInstance));
                             static const WCHAR fmt[] =
                              {'%','s','\\','%','s','\\','%','s',0};
 

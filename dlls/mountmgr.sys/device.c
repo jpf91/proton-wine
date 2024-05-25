@@ -983,6 +983,8 @@ static NTSTATUS set_volume_info( struct volume *volume, struct dos_drive *drive,
             volume->fs_type = FS_ISO9660;
         else if (volume->device->type == DEVICE_DVD)
             volume->fs_type = FS_UDF;
+        else if (volume->device->type == DEVICE_HARDDISK)
+            volume->fs_type = FS_FAT32;
         else
             volume->fs_type = FS_UNKNOWN;
 
